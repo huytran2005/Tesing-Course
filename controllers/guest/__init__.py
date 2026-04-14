@@ -7,7 +7,8 @@ from .me import router as me_router
 from .me_mobile import router as me_mobile_router
 from .qr_entry import router as qr_entry_router
 from .guest_qr import router as guest_qr_router
-router = APIRouter()
+
+router = APIRouter(prefix="/guest", tags=["Guest"])
 router.include_router(guest_qr_router)
 router.include_router(scan_router)
 router.include_router(session_web_router)
