@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/bin/bash
+
 set -e
 
 echo "Starting S2O API container..."
