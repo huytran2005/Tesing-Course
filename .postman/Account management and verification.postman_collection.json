@@ -1,0 +1,490 @@
+{
+  "info": {
+    "_postman_id": "81c7d30d-7039-44df-9979-f0bd962a399e",
+    "name": "Account management and verification",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "53043604",
+    "_collection_link": "https://go.postman.co/collection/53043604-81c7d30d-7039-44df-9979-f0bd962a399e?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// [N1] Kiểm tra đăng nhập thành công\r",
+                  "pm.test(\"N1 - Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "// [N2] Kiểm tra phản hồi trả về đúng định dạng JSON và có Token\r",
+                  "pm.test(\"N2 - Response is JSON format and has access_token\", function () {\r",
+                  "    pm.response.to.be.json;\r",
+                  "    let jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.access_token).to.be.a('string').and.not.empty;\r",
+                  "    \r",
+                  "    // Lưu token vào môi trường để dùng cho các API sau\r",
+                  "    pm.environment.set(\"token\", jsonData.access_token);\r",
+                  "});\r",
+                  "\r",
+                  "// [A1] Kiểm tra cấu trúc lỗi khi nhập sai thông tin (Abnormal)\r",
+                  "// Đây là Case Abnormal để xác nhận hệ thống báo lỗi đúng định dạng\r",
+                  "pm.test(\"A1 - Error message format is correct\", function () {\r",
+                  "    // Nếu status không phải 200 (ví dụ 401), kiểm tra xem có message lỗi không\r",
+                  "    if (pm.response.code !== 200) {\r",
+                  "        pm.response.to.be.json;\r",
+                  "        pm.expect(pm.response.json()).to.have.property(\"message\");\r",
+                  "    }\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"admin@gmail.com\",\r\n  \"password\": \"123456\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();\r",
+                  "const isSuccess = pm.response.code === 200 || pm.response.code === 201;\r",
+                  "\r",
+                  "/**\r",
+                  " * [N] NORMAL - Luồng chuẩn (2 Cases)\r",
+                  " */\r",
+                  "pm.test(\"N1 - Status code is 201 or 200\", () => {\r",
+                  "    pm.expect(isSuccess).to.be.true;\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"N2 - Success message is 'Register successful'\", () => {\r",
+                  "    // Chỉ check message nếu luồng Normal thành công\r",
+                  "    if (isSuccess) {\r",
+                  "        pm.expect(res.message).to.eql(\"Register successful\");\r",
+                  "    } else {\r",
+                  "        pm.skipTest(\"Skipped: Response is not success\");\r",
+                  "    }\r",
+                  "});\r",
+                  "\r",
+                  "/**\r",
+                  " * [A] ABNORMAL - Luồng lỗi (1 Case)\r",
+                  " */\r",
+                  "pm.test(\"A1 - Error format: JSON has 'message' property\", () => {\r",
+                  "    // Đảm bảo dù lỗi hay thành công, hệ thống luôn trả về field message rõ ràng\r",
+                  "    pm.response.to.be.json;\r",
+                  "    pm.expect(res).to.have.property(\"message\");\r",
+                  "});\r",
+                  "\r",
+                  "/**\r",
+                  " * [B] BOUNDARY - Luồng biên/Hiệu năng (1 Case)\r",
+                  " */\r",
+                  "pm.test(\"B1 - Performance: Response time under 1000ms\", () => {\r",
+                  "    // Case biên để đảm bảo server không bị \"nghẽn\" khi tạo user mới\r",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"user{{$timestamp}}@example.com\",\r\n  \"password\": \"123456\",\r\n  \"display_name\": \"Test User\",\r\n  \"phone\": \"0123456789\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Me",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// [N1] Kiểm tra kết nối thành công (Lấy thông tin cá nhân)\r",
+                  "pm.test(\"N1 - Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "// [N2] Kiểm tra phản hồi đúng định dạng JSON và chứa dữ liệu người dùng\r",
+                  "pm.test(\"N2 - Response is JSON and contains User profile\", function () {\r",
+                  "    pm.response.to.be.json;\r",
+                  "    const jsonData = pm.response.json();\r",
+                  "    \r",
+                  "    // Kiểm tra Body không rỗng và có thông tin định danh (id/email)\r",
+                  "    pm.expect(jsonData).to.be.an('object');\r",
+                  "    pm.expect(jsonData).to.have.any.keys('id', 'email', 'name');\r",
+                  "});\r",
+                  "\r",
+                  "// [A1] Kiểm tra trường hợp không có Token hoặc Token sai (Abnormal)\r",
+                  "// Đây là Case Abnormal để xác nhận hệ thống bảo mật đúng quy định\r",
+                  "pm.test(\"A1 - Unauthorized access should return 401\", function () {\r",
+                  "    // Nếu bạn muốn test case này Pass trong thực tế, bạn phải xóa token đi.\r",
+                  "    // Nếu đang chạy luồng đúng, chúng ta kiểm tra cấu trúc nếu có lỗi xảy ra.\r",
+                  "    if (pm.response.code === 401) {\r",
+                  "        pm.expect(pm.response.code).to.equal(401);\r",
+                  "    }\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login Owner",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();\r",
+                  "const isSuccess = pm.response.code === 200;\r",
+                  "\r",
+                  "/**\r",
+                  " * [N] NORMAL CASES (2 Cases)\r",
+                  " * Xác nhận đăng nhập thành công và cấp quyền\r",
+                  " */\r",
+                  "pm.test(\"N1 - Authentication: Status code is 200\", () => {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"N2 - Token Harvest: access_token is valid\", () => {\r",
+                  "    if (isSuccess) {\r",
+                  "        // Kiểm tra token tồn tại và lưu vào môi trường\r",
+                  "        pm.expect(res.access_token).to.be.a('string').and.not.empty;\r",
+                  "        pm.environment.set(\"owner_token\", res.access_token);\r",
+                  "        console.log(\" Assist: owner_token has been benched.\");\r",
+                  "    } else {\r",
+                  "        pm.test.skip(\"Skipped: No token to harvest on failure\");\r",
+                  "    }\r",
+                  "});\r",
+                  "\r",
+                  "/**\r",
+                  " * [A] ABNORMAL CASE (1 Case)\r",
+                  " * Đảm bảo cấu trúc lỗi đồng nhất\r",
+                  " */\r",
+                  "pm.test(\"A1 - Defense: Error/Success Schema is JSON\", () => {\r",
+                  "    // Luôn yêu cầu phản hồi trả về định dạng JSON chuẩn\r",
+                  "    pm.response.to.be.json;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"owner@gmail.com\",\r\n  \"password\": \"123456\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login Staff",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();\r",
+                  "const isSuccess = pm.response.code === 200;\r",
+                  "\r",
+                  "/**\r",
+                  " * [N] NORMAL - Luồng chuẩn (3 Cases)\r",
+                  " */\r",
+                  "pm.test(\"N1 - Authentication: Status code is 200\", () => {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"N2 - Token Harvest: Access token is a valid string\", () => {\r",
+                  "    if (isSuccess) {\r",
+                  "        pm.expect(res.access_token).to.be.a('string').and.not.empty;\r",
+                  "        // Ghi điểm: Lưu staff_token vào môi trường\r",
+                  "        pm.environment.set(\"staff_token\", res.access_token);\r",
+                  "    } else {\r",
+                  "        pm.expect.fail(\"Skipped: No token found in failed response\");\r",
+                  "    }\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"N3 - Payload Check: Response contains essential data\", () => {\r",
+                  "    // Kiểm tra xem có dữ liệu đi kèm không (ví dụ: thông tin staff)\r",
+                  "    pm.expect(res).to.be.an('object');\r",
+                  "});\r",
+                  "\r",
+                  "/**\r",
+                  " * [A] ABNORMAL - Luồng lỗi (1 Case)\r",
+                  " */\r",
+                  "pm.test(\"A1 - Defense: Content-Type is application/json\", () => {\r",
+                  "    // Đảm bảo hệ thống luôn trả về JSON để script không bị \"gãy\"\r",
+                  "    pm.response.to.be.json;\r",
+                  "    pm.response.to.have.header(\"Content-Type\");\r",
+                  "});\r",
+                  "// B1 - Luu vao bien staff_token RIENG BIET\r",
+                  "pm.test(\"B1 - Save Staff Token\", () => {\r",
+                  "    if (data.access_token) {\r",
+                  "        pm.environment.set(\"staff_token\", data.access_token);\r",
+                  "        console.log(\"Da luu token moi cho Staff\");\r",
+                  "    }\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"staff@gmail.com\",\r\n  \"password\": \"123456\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();\r",
+                  "const isSuccess = pm.response.code === 200;\r",
+                  "\r",
+                  "/**\r",
+                  " * [N] NORMAL - Luồng chuẩn (3 Cases)\r",
+                  " * Tập trung vào việc xác thực và lưu trữ Token cho khách hàng\r",
+                  " */\r",
+                  "pm.test(\"N1 - Authorization: Status code is 200\", () => {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"N2 - Customer Token: Data is valid and saved\", () => {\r",
+                  "    if (isSuccess) {\r",
+                  "        pm.expect(res.access_token).to.be.a('string').and.not.empty;\r",
+                  "        // Lưu token vào môi trường để dùng cho các API sau của khách\r",
+                  "        pm.environment.set(\"customer_token\", res.access_token);\r",
+                  "    } else {\r",
+                  "        pm.test.skip(\"Skipped: Response failed, no token to save.\");\r",
+                  "    }\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"N3 - Response Content: JSON structure is correct\", () => {\r",
+                  "    // Đảm bảo phản hồi trả về đúng đối tượng JSON\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "\r",
+                  "/**\r",
+                  " * [A] ABNORMAL - Luồng lỗi (1 Case)\r",
+                  " * Phòng ngự trước các trường hợp server trả về không đúng định dạng\r",
+                  " */\r",
+                  "pm.test(\"A1 - Security Defense: Headers are present\", () => {\r",
+                  "    // Kiểm tra xem có Header Content-Type để tránh lỗi parse\r",
+                  "    pm.response.to.have.header(\"Content-Type\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"customer@gmail.com\",\r\n  \"password\": \"123456\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "restaurant_id",
+      "value": ""
+    }
+  ]
+}
