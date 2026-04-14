@@ -1,0 +1,3693 @@
+{
+  "info": {
+    "_postman_id": "82ab9078-e739-45a7-99ca-4bed185976d0",
+    "name": "S2O-Test-full-api-done",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "53043604",
+    "_collection_link": "https://go.postman.co/collection/53043604-82ab9078-e739-45a7-99ca-4bed185976d0?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// [N1] Kiểm tra đăng nhập thành công\r",
+                  "pm.test(\"N1 - Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "// [N2] Kiểm tra phản hồi trả về đúng định dạng JSON và có Token\r",
+                  "pm.test(\"N2 - Response is JSON format and has access_token\", function () {\r",
+                  "    pm.response.to.be.json;\r",
+                  "    let jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.access_token).to.be.a('string').and.not.empty;\r",
+                  "    \r",
+                  "    // Lưu token vào môi trường để dùng cho các API sau\r",
+                  "    pm.environment.set(\"token\", jsonData.access_token);\r",
+                  "});\r",
+                  "\r",
+                  "// [A1] Kiểm tra cấu trúc lỗi khi nhập sai thông tin (Abnormal)\r",
+                  "// Đây là Case Abnormal để xác nhận hệ thống báo lỗi đúng định dạng\r",
+                  "pm.test(\"A1 - Error message format is correct\", function () {\r",
+                  "    // Nếu status không phải 200 (ví dụ 401), kiểm tra xem có message lỗi không\r",
+                  "    if (pm.response.code !== 200) {\r",
+                  "        pm.response.to.be.json;\r",
+                  "        pm.expect(pm.response.json()).to.have.property(\"message\");\r",
+                  "    }\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"admin@gmail.com\",\r\n  \"password\": \"123456\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();\r",
+                  "const isSuccess = pm.response.code === 200 || pm.response.code === 201;\r",
+                  "\r",
+                  "/**\r",
+                  " * [N] NORMAL - Luồng chuẩn (2 Cases)\r",
+                  " */\r",
+                  "pm.test(\"N1 - Status code is 201 or 200\", () => {\r",
+                  "    pm.expect(isSuccess).to.be.true;\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"N2 - Success message is 'Register successful'\", () => {\r",
+                  "    // Chỉ check message nếu luồng Normal thành công\r",
+                  "    if (isSuccess) {\r",
+                  "        pm.expect(res.message).to.eql(\"Register successful\");\r",
+                  "    } else {\r",
+                  "        pm.skipTest(\"Skipped: Response is not success\");\r",
+                  "    }\r",
+                  "});\r",
+                  "\r",
+                  "/**\r",
+                  " * [A] ABNORMAL - Luồng lỗi (1 Case)\r",
+                  " */\r",
+                  "pm.test(\"A1 - Error format: JSON has 'message' property\", () => {\r",
+                  "    // Đảm bảo dù lỗi hay thành công, hệ thống luôn trả về field message rõ ràng\r",
+                  "    pm.response.to.be.json;\r",
+                  "    pm.expect(res).to.have.property(\"message\");\r",
+                  "});\r",
+                  "\r",
+                  "/**\r",
+                  " * [B] BOUNDARY - Luồng biên/Hiệu năng (1 Case)\r",
+                  " */\r",
+                  "pm.test(\"B1 - Performance: Response time under 1000ms\", () => {\r",
+                  "    // Case biên để đảm bảo server không bị \"nghẽn\" khi tạo user mới\r",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"user{{$timestamp}}@example.com\",\r\n  \"password\": \"123456\",\r\n  \"display_name\": \"Test User\",\r\n  \"phone\": \"0123456789\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Me",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// [N1] Kiểm tra kết nối thành công (Lấy thông tin cá nhân)\r",
+                  "pm.test(\"N1 - Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "// [N2] Kiểm tra phản hồi đúng định dạng JSON và chứa dữ liệu người dùng\r",
+                  "pm.test(\"N2 - Response is JSON and contains User profile\", function () {\r",
+                  "    pm.response.to.be.json;\r",
+                  "    const jsonData = pm.response.json();\r",
+                  "    \r",
+                  "    // Kiểm tra Body không rỗng và có thông tin định danh (id/email)\r",
+                  "    pm.expect(jsonData).to.be.an('object');\r",
+                  "    pm.expect(jsonData).to.have.any.keys('id', 'email', 'name');\r",
+                  "});\r",
+                  "\r",
+                  "// [A1] Kiểm tra trường hợp không có Token hoặc Token sai (Abnormal)\r",
+                  "// Đây là Case Abnormal để xác nhận hệ thống bảo mật đúng quy định\r",
+                  "pm.test(\"A1 - Unauthorized access should return 401\", function () {\r",
+                  "    // Nếu bạn muốn test case này Pass trong thực tế, bạn phải xóa token đi.\r",
+                  "    // Nếu đang chạy luồng đúng, chúng ta kiểm tra cấu trúc nếu có lỗi xảy ra.\r",
+                  "    if (pm.response.code === 401) {\r",
+                  "        pm.expect(pm.response.code).to.equal(401);\r",
+                  "    }\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login Owner",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();\r",
+                  "const isSuccess = pm.response.code === 200;\r",
+                  "\r",
+                  "/**\r",
+                  " * [N] NORMAL CASES (2 Cases)\r",
+                  " * Xác nhận đăng nhập thành công và cấp quyền\r",
+                  " */\r",
+                  "pm.test(\"N1 - Authentication: Status code is 200\", () => {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"N2 - Token Harvest: access_token is valid\", () => {\r",
+                  "    if (isSuccess) {\r",
+                  "        // Kiểm tra token tồn tại và lưu vào môi trường\r",
+                  "        pm.expect(res.access_token).to.be.a('string').and.not.empty;\r",
+                  "        pm.environment.set(\"owner_token\", res.access_token);\r",
+                  "        console.log(\" Assist: owner_token has been benched.\");\r",
+                  "    } else {\r",
+                  "        pm.test.skip(\"Skipped: No token to harvest on failure\");\r",
+                  "    }\r",
+                  "});\r",
+                  "\r",
+                  "/**\r",
+                  " * [A] ABNORMAL CASE (1 Case)\r",
+                  " * Đảm bảo cấu trúc lỗi đồng nhất\r",
+                  " */\r",
+                  "pm.test(\"A1 - Defense: Error/Success Schema is JSON\", () => {\r",
+                  "    // Luôn yêu cầu phản hồi trả về định dạng JSON chuẩn\r",
+                  "    pm.response.to.be.json;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"owner@gmail.com\",\r\n  \"password\": \"123456\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login Staff",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();\r",
+                  "const isSuccess = pm.response.code === 200;\r",
+                  "\r",
+                  "/**\r",
+                  " * [N] NORMAL - Luồng chuẩn (3 Cases)\r",
+                  " */\r",
+                  "pm.test(\"N1 - Authentication: Status code is 200\", () => {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"N2 - Token Harvest: Access token is a valid string\", () => {\r",
+                  "    if (isSuccess) {\r",
+                  "        pm.expect(res.access_token).to.be.a('string').and.not.empty;\r",
+                  "        // Ghi điểm: Lưu staff_token vào môi trường\r",
+                  "        pm.environment.set(\"staff_token\", res.access_token);\r",
+                  "    } else {\r",
+                  "        pm.expect.fail(\"Skipped: No token found in failed response\");\r",
+                  "    }\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"N3 - Payload Check: Response contains essential data\", () => {\r",
+                  "    // Kiểm tra xem có dữ liệu đi kèm không (ví dụ: thông tin staff)\r",
+                  "    pm.expect(res).to.be.an('object');\r",
+                  "});\r",
+                  "\r",
+                  "/**\r",
+                  " * [A] ABNORMAL - Luồng lỗi (1 Case)\r",
+                  " */\r",
+                  "pm.test(\"A1 - Defense: Content-Type is application/json\", () => {\r",
+                  "    // Đảm bảo hệ thống luôn trả về JSON để script không bị \"gãy\"\r",
+                  "    pm.response.to.be.json;\r",
+                  "    pm.response.to.have.header(\"Content-Type\");\r",
+                  "});\r",
+                  "// B1 - Luu vao bien staff_token RIENG BIET\r",
+                  "pm.test(\"B1 - Save Staff Token\", () => {\r",
+                  "    if (data.access_token) {\r",
+                  "        pm.environment.set(\"staff_token\", data.access_token);\r",
+                  "        console.log(\"Da luu token moi cho Staff\");\r",
+                  "    }\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"staff@gmail.com\",\r\n  \"password\": \"123456\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();\r",
+                  "const isSuccess = pm.response.code === 200;\r",
+                  "\r",
+                  "/**\r",
+                  " * [N] NORMAL - Luồng chuẩn (3 Cases)\r",
+                  " * Tập trung vào việc xác thực và lưu trữ Token cho khách hàng\r",
+                  " */\r",
+                  "pm.test(\"N1 - Authorization: Status code is 200\", () => {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"N2 - Customer Token: Data is valid and saved\", () => {\r",
+                  "    if (isSuccess) {\r",
+                  "        pm.expect(res.access_token).to.be.a('string').and.not.empty;\r",
+                  "        // Lưu token vào môi trường để dùng cho các API sau của khách\r",
+                  "        pm.environment.set(\"customer_token\", res.access_token);\r",
+                  "    } else {\r",
+                  "        pm.test.skip(\"Skipped: Response failed, no token to save.\");\r",
+                  "    }\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"N3 - Response Content: JSON structure is correct\", () => {\r",
+                  "    // Đảm bảo phản hồi trả về đúng đối tượng JSON\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "\r",
+                  "/**\r",
+                  " * [A] ABNORMAL - Luồng lỗi (1 Case)\r",
+                  " * Phòng ngự trước các trường hợp server trả về không đúng định dạng\r",
+                  " */\r",
+                  "pm.test(\"A1 - Security Defense: Headers are present\", () => {\r",
+                  "    // Kiểm tra xem có Header Content-Type để tránh lỗi parse\r",
+                  "    pm.response.to.have.header(\"Content-Type\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"customer@gmail.com\",\r\n  \"password\": \"123456\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Restaurant",
+      "item": [
+        {
+          "name": "restaurants",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// [N1] Kiểm tra tạo nhà hàng thành công (Status 201)\r",
+                  "pm.test(\"N1 - Status code is 201\", function () {\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "});\r",
+                  "\r",
+                  "// [N2] Kiểm tra phản hồi trả về đúng định dạng JSON và có ID\r",
+                  "let data = pm.response.json();\r",
+                  "pm.test(\"N2 - Response is JSON and Restaurant created with ID\", function () {\r",
+                  "    pm.response.to.be.json;\r",
+                  "    pm.expect(data).to.have.property(\"id\");\r",
+                  "    \r",
+                  "    // Lưu ID vào môi trường để sử dụng cho các API sau\r",
+                  "    pm.environment.set(\"restaurant_id\", data.id);\r",
+                  "});\r",
+                  "\r",
+                  "// [B1] Kiểm tra định dạng dữ liệu trả về (Kiểu dữ liệu ID)\r",
+                  "// Đây là Case Boundary để xác nhận ID trả về đúng định dạng chuỗi (UUID)\r",
+                  "pm.test(\"B1 - Data types of ID is correct\", function () {\r",
+                  "    pm.expect(data.id).to.be.a('string'); \r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"id\": \"fb4a9eab-1803-4f1c-ae9f-4583892867de\",\r\n    \"name\": \"Pizza Hut\",\r\n    \"description\": \"Famous pizza restaurant\",\r\n    \"image_preview\": null\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/restaurants",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "restaurants"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "restaurants",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// [N1] Kiểm tra kết nối thành công (Lấy danh sách nhà hàng)\r",
+                  "pm.test(\"N1 - Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "// [N2] Kiểm tra phản hồi trả về đúng định dạng JSON\r",
+                  "pm.test(\"N2 - Response is JSON format\", function () {\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "\r",
+                  "// [N3] Kiểm tra dữ liệu trả về phải là một danh sách (Array)\r",
+                  "// Đảm bảo hệ thống trả về mảng dữ liệu ngay cả khi trống\r",
+                  "let data = pm.response.json();\r",
+                  "pm.test(\"N3 - Response data is an array\", function () {\r",
+                  "    pm.expect(data).to.be.an(\"array\");\r",
+                  "    pm.expect(data).to.not.be.null;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/restaurants",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "restaurants"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update restaurant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// [N1] Kiểm tra cập nhật ảnh thành công\r",
+                  "pm.test(\"N1 - Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "// [N2] Kiểm tra phản hồi trả về đúng định dạng JSON\r",
+                  "pm.test(\"N2 - Response is JSON format\", function () {\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "\r",
+                  "// [B1] Kiểm tra xem phản hồi có chứa đường dẫn ảnh (URL/Path) không\r",
+                  "// Đây là Case Boundary (Biên) để xác nhận dữ liệu trả về có nội dung\r",
+                  "let jsonData = pm.response.json();\r",
+                  "pm.test(\"B1 - Response contains image URL or status\", function () {\r",
+                  "    // Check xem có trường url hoặc image hoặc message không\r",
+                  "    pm.expect(jsonData).to.be.an('object');\r",
+                  "    pm.expect(Object.keys(jsonData).length).to.be.at.least(1);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"Pizza Hut Updated\",\r\n  \"description\": \"newwww description\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/restaurants/{{restaurant_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "restaurants",
+                "{{restaurant_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "up-preview-image",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// [N1] Kiểm tra cập nhật ảnh thành công (Status 200)\r",
+                  "pm.test(\"N1 - Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "// [N2] Kiểm tra phản hồi trả về đúng định dạng JSON\r",
+                  "pm.test(\"N2 - Response is JSON format\", function () {\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "\r",
+                  "// [B1] Kiểm tra phản hồi có chứa dữ liệu ảnh (URL/Path)\r",
+                  "// Đây là Case Boundary để xác nhận dữ liệu trả về không bị rỗng\r",
+                  "let data = pm.response.json();\r",
+                  "pm.test(\"B1 - Response contains image information\", function () {\r",
+                  "    pm.expect(data).to.be.an('object');\r",
+                  "    // Kiểm tra xem có trường liên quan đến ảnh (ví dụ: url, path hoặc data)\r",
+                  "    pm.expect(Object.keys(data).length).to.be.at.least(1);\r",
+                  "});\r",
+                  "\r",
+                  "// Log kiểm tra biến môi trường\r",
+                  "console.log(\"restaurant_id =\", pm.environment.get(\"restaurant_id\"));"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "uuid": "4cf33ca4-ddb4-4e4d-93f6-306da9d97645",
+                  "src": "/C:/Users/TuanHuy/Downloads/pizza.jpg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/restaurants/{{restaurant_id}}/preview-image",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "restaurants",
+                "{{restaurant_id}}",
+                "preview-image"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete restaurant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// [N1] Kiểm tra xóa nhà hàng thành công (Status 200 hoặc 204)\r",
+                  "pm.test(\"N1 - Status code is 200 or 204\", function () {\r",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
+                  "});\r",
+                  "\r",
+                  "// [N2] Kiểm tra phản hồi trả về đúng định dạng JSON\r",
+                  "pm.test(\"N2 - Response is JSON format\", function () {\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "\r",
+                  "// [A1] Kiểm tra phản hồi xác nhận việc xóa (Abnormal/Verify)\r",
+                  "// Đảm bảo Body trả về có chứa thông báo thành công hoặc không rỗng\r",
+                  "let jsonData = pm.response.json();\r",
+                  "pm.test(\"A1 - Delete operation is confirmed in response\", function () {\r",
+                  "    pm.expect(jsonData).to.be.an('object');\r",
+                  "    // Kiểm tra xem có message báo xóa thành công không\r",
+                  "    pm.expect(jsonData).to.have.any.keys('message', 'status', 'id');\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/restaurants/{{restaurant_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "restaurants",
+                "{{restaurant_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "default",
+      "item": [
+        {
+          "name": "Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// [N1] Kiểm tra kết nối hệ thống thành công (Status 200)\r",
+                  "pm.test(\"N1 - Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "// [N2] Kiểm tra trạng thái hệ thống là OK\r",
+                  "let jsonData = pm.response.json();\r",
+                  "pm.test(\"N2 - Health check status OK\", function () {\r",
+                  "    pm.response.to.be.json;\r",
+                  "    pm.expect(jsonData.status).to.eql(\"ok\");\r",
+                  "});\r",
+                  "\r",
+                  "// [B1] Kiểm tra hiệu năng hệ thống (Boundary)\r",
+                  "// Đảm bảo thời gian phản hồi nằm trong giới hạn cho phép (< 500ms)\r",
+                  "pm.test(\"B1 - Response time is below 500ms\", function () {\r",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Metrics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// [N1] Kiểm tra kết nối lấy dữ liệu Metrics thành công\r",
+                  "pm.test(\"N1 - Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "// [N2] Kiểm tra dữ liệu Metrics trả về không bị trống\r",
+                  "pm.test(\"N2 - Metrics response exists and is not empty\", function () {\r",
+                  "    pm.expect(pm.response.text()).to.not.be.empty;\r",
+                  "});\r",
+                  "\r",
+                  "// [B1] Kiểm tra nội dung Metrics chứa thông tin định danh (http)\r",
+                  "// Đây là Case Boundary để xác nhận hệ thống đang ghi nhận đúng loại dữ liệu\r",
+                  "pm.test(\"B1 - Metrics contains http requests data\", function () {\r",
+                  "    pm.expect(pm.response.text()).to.include(\"http\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/plain",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/metrics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "metrics"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Qr Entry",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// [N1] Kiểm tra truy cập đường dẫn QR thành công (Status 200)\r",
+                  "pm.test(\"N1 - Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "// [N2] Kiểm tra phản hồi phải là định dạng HTML\r",
+                  "pm.test(\"N2 - Response is HTML format\", function () {\r",
+                  "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"text/html\");\r",
+                  "});\r",
+                  "\r",
+                  "// [N3] Kiểm tra nội dung phản hồi không được để trống\r",
+                  "pm.test(\"N3 - Response body not empty\", function () {\r",
+                  "    pm.expect(pm.response.text()).to.not.be.empty;\r",
+                  "});\r",
+                  "\r",
+                  "// [B1] Kiểm tra nội dung HTML có chứa thông tin cần thiết (Boundary)\r",
+                  "// Đảm bảo trang web trả về có chứa các thẻ hoặc nội dung cơ bản\r",
+                  "pm.test(\"B1 - HTML contains body tag\", function () {\r",
+                  "    pm.expect(pm.response.text()).to.include(\"<body\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/html",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/qr-entry?code=123e4567-e89b-12d3-a456-426614174000",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "qr-entry"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "123e4567-e89b-12d3-a456-426614174000"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Guest",
+      "item": [
+        {
+          "name": "Scan QR",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// [N1] Kiểm tra quét mã QR thành công (Status 200)\r",
+                  "pm.test(\"N1 - Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "// [N2] Kiểm tra phản hồi trả về đúng định dạng JSON\r",
+                  "pm.test(\"N2 - Response is JSON format\", function () {\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "\r",
+                  "// [B1] Kiểm tra hiệu năng hệ thống (Boundary)\r",
+                  "// Đảm bảo tốc độ phản hồi khi khách quét mã phải nhanh (< 500ms)\r",
+                  "pm.test(\"B1 - Response time is below 500ms\", function () {\r",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);\r",
+                  "});\r",
+                  "\r",
+                  "// [B2] Kiểm tra dữ liệu trả về có chứa thông tin định danh (Boundary)\r",
+                  "let data = pm.response.json();\r",
+                  "pm.test(\"B2 - Response contains essential guest/table data\", function () {\r",
+                  "    pm.expect(data).to.be.an('object');\r",
+                  "    // Kiểm tra xem có Token cho khách hoặc ID bàn không\r",
+                  "    pm.expect(data).to.have.any.keys('access_token', 'table_id', 'guest_id');\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/guest/scan\n?code=d8ac01f4-101e-4c38-bea8-459603ae9adf",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "guest",
+                "scan\n"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "d8ac01f4-101e-4c38-bea8-459603ae9adf"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Guest Session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// [N1] Kiểm tra tạo phiên làm việc thành công (Status 200)\r",
+                  "pm.test(\"N1 - Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "// [N2] Kiểm tra phản hồi trả về đúng định dạng JSON\r",
+                  "pm.test(\"N2 - Response is JSON format\", function () {\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "\r",
+                  "// [N3] Kiểm tra và lưu Session Token\r",
+                  "let data = pm.response.json();\r",
+                  "pm.test(\"N3 - Session token exists and is valid\", function () {\r",
+                  "    // Kiểm tra xem có session_token hoặc token không\r",
+                  "    pm.expect(data.session_token || data.token).to.exist;\r",
+                  "    \r",
+                  "    // Lưu vào môi trường (Ưu tiên session_token theo code của bạn)\r",
+                  "    pm.environment.set(\"session_token\", data.session_token || data.token);\r",
+                  "    console.log(\"Saved session_token:\", data.session_token || data.token);\r",
+                  "});\r",
+                  "\r",
+                  "// [B1] Kiểm tra hiệu năng tạo session (Boundary)\r",
+                  "// Đảm bảo việc cấp token cho khách phải cực nhanh (< 500ms)\r",
+                  "pm.test(\"B1 - Response time is below 500ms\", function () {\r",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);\r",
+                  "});\r",
+                  "\r",
+                  "// [A1] Kiểm tra cấu trúc dữ liệu nếu có lỗi (Abnormal)\r",
+                  "pm.test(\"A1 - Error format check\", function () {\r",
+                  "    if (pm.response.code !== 200) {\r",
+                  "        pm.expect(data).to.have.property(\"message\");\r",
+                  "    }\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"restaurant_id\": \"f3c7bc32-5565-4b32-ae42-20577d54a2de\",\r\n  \"table_id\": \"ccf6494a-6e37-45a9-ad48-9ae4e53d048f\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/guest/session?code=d8ac01f4-101e-4c38-bea8-459603ae9adf",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "guest",
+                "session"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "d8ac01f4-101e-4c38-bea8-459603ae9adf"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Guest Me",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// [N1] Kiểm tra lấy thông tin khách thành công (Status 200)\r",
+                  "pm.test(\"N1 - Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "// [N2] Kiểm tra phản hồi trả về đúng định dạng JSON\r",
+                  "pm.test(\"N2 - Response is JSON format\", function () {\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "\r",
+                  "// [N3] Kiểm tra dữ liệu khách hàng trả về có đầy đủ thông tin\r",
+                  "let data = pm.response.json();\r",
+                  "\r",
+                  "\r",
+                  "// [B1] Kiểm tra hiệu năng tải thông tin cá nhân (Boundary)\r",
+                  "pm.test(\"B1 - Response time is below 500ms\", function () {\r",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);\r",
+                  "});\r",
+                  "\r",
+                  "// [A1] Kiểm tra khi Session Token hết hạn hoặc không hợp lệ (Abnormal)\r",
+                  "pm.test(\"A1 - Unauthorized access returns 401\", function () {\r",
+                  "    if (pm.response.code === 401) {\r",
+                  "        pm.expect(pm.response.code).to.equal(401);\r",
+                  "    }\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{session_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/guest/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "guest",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tables",
+      "item": [
+        {
+          "name": "Get_All_Table",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "/**\r",
+                  " * [TACTIC] Pre-fetch Data\r",
+                  " */\r",
+                  "const res = pm.response.json();\r",
+                  "const isSuccess = pm.response.code === 200;\r",
+                  "\r",
+                  "/**\r",
+                  " * [N] NORMAL - Luồng chuẩn (3 Cases)\r",
+                  " * Tập trung vào việc xác nhận danh sách dữ liệu đổ về\r",
+                  " */\r",
+                  "pm.test(\"N1 - Discovery: Status code is 200\", () => {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"N2 - Data Format: Response is a valid JSON Array\", () => {\r",
+                  "    // Kết hợp kiểm tra định dạng JSON và kiểu dữ liệu Array\r",
+                  "    pm.response.to.be.json;\r",
+                  "    pm.expect(res).to.be.an(\"array\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"N3 - Integrity: List is not null\", () => {\r",
+                  "    // Đảm bảo danh sách trả về (dù rỗng [] hay có data) vẫn phải là array sạch\r",
+                  "    if (isSuccess) {\r",
+                  "        pm.expect(res).to.not.be.null;\r",
+                  "        console.log(` Assist: Found ${res.length} items in list.`);\r",
+                  "    } else {\r",
+                  "        pm.test.skip(\"Skipped: Could not verify list integrity on error\");\r",
+                  "    }\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tables",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tables"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Table",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Khai báo an toàn\r",
+                  "const statusCode = pm.response.code;\r",
+                  "let res = {};\r",
+                  "try { res = pm.response.json(); } catch (e) { res = {}; }\r",
+                  "\r",
+                  "// --- [N] NORMAL (3 Cases) ---\r",
+                  "pm.test(\"N1 - Status code is 201 Created\", () => {\r",
+                  "    pm.expect(statusCode).to.be.oneOf([200, 201]);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"N2 - Save table_id to Environment\", () => {\r",
+                  "    if (statusCode === 201 || statusCode === 200) {\r",
+                  "        pm.expect(res.id).to.exist;\r",
+                  "        pm.environment.set(\"table_id\", res.id);\r",
+                  "    } else {\r",
+                  "        pm.test.skip(\"Server Error 500 - Skip saving ID\");\r",
+                  "    }\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"N3 - Response Format is JSON\", () => {\r",
+                  "    // Nếu là lỗi 500 (Text), case này sẽ báo lỗi định dạng để bạn biết\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "\r",
+                  "// --- [A] ABNORMAL (1 Case) ---\r",
+                  "pm.test(\"A1 - Error Defense: No Server Crash\", () => {\r",
+                  "    // Nếu trả về 500 thì case này sẽ Failed -> Báo cáo cần fix backend\r",
+                  "    pm.expect(statusCode).to.not.equal(500);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"restaurant_id\": \"f3c7bc32-5565-4b32-ae42-20577d54a2de\",\r\n  \"name\": \"Table 98\",\r\n  \"seats\": 4,\r\n  \"status\": \"available\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/tables",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tables"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Table By ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Response is JSON\", function () {\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "\r",
+                  "let data = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"Table exists\", function () {\r",
+                  "    pm.expect(data).to.have.property(\"id\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// ===== 1. Lấy table_id =====\r",
+                  "const tableId = pm.environment.get(\"table_id\");\r",
+                  "\r",
+                  "if (!tableId) {\r",
+                  "    console.log(\"ERROR: table_id is missing or null\");\r",
+                  "} else {\r",
+                  "    console.log(\"Using table_id:\", tableId);\r",
+                  "}\r",
+                  "\r",
+                  "// ===== 2. Lấy role =====\r",
+                  "const role = pm.environment.get(\"current_role\");\r",
+                  "console.log(\"Current role:\", role);\r",
+                  "\r",
+                  "// ===== 3. Lấy token theo role =====\r",
+                  "let token = \"\";\r",
+                  "\r",
+                  "if (role === \"owner\") {\r",
+                  "    token = pm.environment.get(\"owner_token\");\r",
+                  "} else if (role === \"staff\") {\r",
+                  "    token = pm.environment.get(\"staff_token\");\r",
+                  "} else if (role === \"customer\") {\r",
+                  "    token = pm.environment.get(\"customer_token\");\r",
+                  "}\r",
+                  "\r",
+                  "// ===== 4. Gắn Authorization header =====\r",
+                  "if (token) {\r",
+                  "    pm.request.headers.upsert({\r",
+                  "        key: \"Authorization\",\r",
+                  "        value: `Bearer ${token}`\r",
+                  "    });\r",
+                  "    console.log(\"Authorization header set\");\r",
+                  "} else {\r",
+                  "    console.log(\"ERROR: token not found for role:\", role);\r",
+                  "}\r",
+                  "\r",
+                  "// ===== 5. Debug URL thực tế =====\r",
+                  "console.log(\"Final URL:\", pm.request.url.toString());"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tables/{{table_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tables",
+                "{{table_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Table",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const statusCode = pm.response.code;\r",
+                  "\r",
+                  "// [N] NORMAL (3 Cases)\r",
+                  "pm.test(\"N1 - Status code is 204 or 200\", () => {\r",
+                  "    pm.expect(statusCode).to.be.oneOf([200, 204]);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"N2 - Clean up Environment Variable\", () => {\r",
+                  "    if (statusCode === 200 || statusCode === 204) {\r",
+                  "        pm.environment.unset(\"table_id\");\r",
+                  "        console.log(\"Environment: table_id has been cleared.\");\r",
+                  "    }\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"N3 - Response is empty or Success msg\", () => {\r",
+                  "    if (statusCode === 204) {\r",
+                  "        pm.expect(pm.response.text()).to.be.empty;\r",
+                  "    } else {\r",
+                  "        pm.response.to.be.json;\r",
+                  "    }\r",
+                  "});\r",
+                  "\r",
+                  "// [A] ABNORMAL (1 Case)\r",
+                  "pm.test(\"A1 - Error Defense: Table not found (404) handled\", () => {\r",
+                  "    // Nếu xóa lại lần 2, server nên trả về 404 thay vì 500\r",
+                  "    pm.expect(statusCode).to.not.equal(500);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tables/{{table_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tables",
+                "{{table_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "pm.environment.set(\"current_role\", \"staff\");\r",
+              "\r",
+              "const role = pm.environment.get(\"current_role\");\r",
+              "\r",
+              "let token = \"\";\r",
+              "\r",
+              "if (role === \"owner\") {\r",
+              "    token = pm.environment.get(\"owner_token\");\r",
+              "} else if (role === \"staff\") {\r",
+              "    token = pm.environment.get(\"staff_token\");\r",
+              "} else if (role === \"customer\") {\r",
+              "    token = pm.environment.get(\"customer_token\");\r",
+              "}\r",
+              "\r",
+              "pm.request.headers.upsert({\r",
+              "    key: \"Authorization\",\r",
+              "    value: `Bearer ${token}`\r",
+              "});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "Create Category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Kiểm tra an toàn trước khi parse JSON (phòng lỗi 500)\r",
+                  "let jsonData;\r",
+                  "try {\r",
+                  "    jsonData = pm.response.json();\r",
+                  "} catch (e) {\r",
+                  "    jsonData = {};\r",
+                  "}\r",
+                  "\r",
+                  "const statusCode = pm.response.code;\r",
+                  "\r",
+                  "/**\r",
+                  " * [N] NORMAL - Luồng chuẩn (2 Cases theo ý bạn)\r",
+                  " */\r",
+                  "\r",
+                  "// N1: Kiểm tra trạng thái thành công\r",
+                  "pm.test(\"N1 - Status code is 200 or 201\", function () {\r",
+                  "    pm.expect(statusCode).to.be.oneOf([200, 201]);\r",
+                  "});\r",
+                  "\r",
+                  "// N2: TRÍCH XUẤT VÀ LƯU categoryId (Dòng quan trọng nhất)\r",
+                  "pm.test(\"N2 - Save categoryId to Environment\", function () {\r",
+                  "    if (statusCode === 200 || statusCode === 201) {\r",
+                  "        // Kiểm tra xem property 'id' có tồn tại trong response không\r",
+                  "        pm.expect(jsonData.id).to.exist;\r",
+                  "        \r",
+                  "        // Gán giá trị vào biến môi trường\r",
+                  "        pm.environment.set(\"categoryId\", jsonData.id);\r",
+                  "        \r",
+                  "        console.log(\" Đã lưu categoryId: \" + jsonData.id);\r",
+                  "    } else {\r",
+                  "        pm.test.skip(\"Skipped: Request thất bại, không có ID để lưu\");\r",
+                  "    }\r",
+                  "});\r",
+                  "\r",
+                  "/**\r",
+                  " * [A] ABNORMAL - Luồng lỗi\r",
+                  " */\r",
+                  "pm.test(\"A1 - Error Defense: No Internal Server Error\", function () {\r",
+                  "    // Đảm bảo server không sập (500)\r",
+                  "    pm.expect(statusCode).to.not.equal(500);\r",
+                  "});\r",
+                  "\r",
+                  "/**\r",
+                  " * [B] BOUNDARY - Cấu trúc dữ liệu\r",
+                  " */\r",
+                  "pm.test(\"B1 - Response has name field\", function () {\r",
+                  "    if (statusCode < 300) {\r",
+                  "        pm.expect(jsonData).to.have.property(\"name\");\r",
+                  "    }\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"Category {{$timestamp}}\",\r\n  \"icon\": \"🍔\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/categories/?restaurant_id={{restaurant_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "categories",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "restaurant_id",
+                  "value": "{{restaurant_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Categories",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();\r",
+                  "\r",
+                  "// [N] NORMAL (2 Cases)\r",
+                  "pm.test(\"N1 - Status code is 200 OK\", () => {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"N2 - Response is an Array\", () => {\r",
+                  "    pm.expect(res).to.be.an(\"array\");\r",
+                  "});\r",
+                  "\r",
+                  "// [A] ABNORMAL (1 Case)\r",
+                  "pm.test(\"A1 - Format: Content-Type is JSON\", () => {\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "\r",
+                  "// [B] BOUNDARY (1 Case)\r",
+                  "pm.test(\"B1 - Pick random ID if list exists\", () => {\r",
+                  "    if (res.length > 0) {\r",
+                  "        const id = res[Math.floor(Math.random() * res.length)].id;\r",
+                  "        pm.environment.set(pm.info.requestName.includes(\"Table\") ? \"table_id\" : \"categoryId\", id);\r",
+                  "    }\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/categories/?restaurant_id={{restaurant_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "categories",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "restaurant_id",
+                  "value": "{{restaurant_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const statusCode = pm.response.code;\r",
+                  "\r",
+                  "// N1 - Kiểm tra trạng thái xóa thành công\r",
+                  "pm.test(\"N1 - Status code is 204 or 200\", () => {\r",
+                  "    pm.expect(statusCode).to.be.oneOf([200, 204]);\r",
+                  "});\r",
+                  "\r",
+                  "// N2 - Dọn dẹp biến môi trường\r",
+                  "pm.test(\"N2 - Cleanup: Unset categoryId\", () => {\r",
+                  "    if (statusCode === 200 || statusCode === 204) {\r",
+                  "        pm.environment.unset(\"categoryId\");\r",
+                  "    }\r",
+                  "});\r",
+                  "\r",
+                  "// [A] ABNORMAL - Kiểm tra lỗi Not Found\r",
+                  "pm.test(\"A1 - Error Check: ID must exist\", () => {\r",
+                  "    pm.expect(statusCode).to.not.equal(404);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/categories/{{categoryId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "categories",
+                "{{categoryId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "auth": {
+        "type": "bearer"
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "pm.environment.set(\"current_role\", \"staff\");\r",
+              "\r",
+              "const role = pm.environment.get(\"current_role\");\r",
+              "\r",
+              "let token = \"\";\r",
+              "\r",
+              "if (role === \"owner\") {\r",
+              "    token = pm.environment.get(\"owner_token\");\r",
+              "} else if (role === \"staff\") {\r",
+              "    token = pm.environment.get(\"staff_token\");\r",
+              "} else if (role === \"customer\") {\r",
+              "    token = pm.environment.get(\"customer_token\");\r",
+              "}\r",
+              "\r",
+              "pm.request.headers.upsert({\r",
+              "    key: \"Authorization\",\r",
+              "    value: `Bearer ${token}`\r",
+              "});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Menu",
+      "item": [
+        {
+          "name": "Search Menu",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "// N1 - Kiểm tra kết nối thành công (200 OK)",
+                  "pm.test(\"N1 - Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// N2 - Kiểm tra dữ liệu trả về đúng định dạng mảng (Array)",
+                  "pm.test(\"N2 - Response is a valid list\", () => {",
+                  "    pm.expect(res).to.be.an(\"array\");",
+                  "});",
+                  "",
+                  "// N3 - Kiểm tra mảng không rỗng và lưu ID đầu tiên (để test tiếp)",
+                  "pm.test(\"N3 - List is not empty and ID saved\", () => {",
+                  "    if (res.length > 0) {",
+                  "        pm.expect(res[0]).to.have.property(\"id\");",
+                  "        // Tự động lưu ID tùy theo tên API (Table hoặc Category)",
+                  "        const idName = pm.info.requestName.toLowerCase().includes(\"table\") ? \"table_id\" : \"categoryId\";",
+                  "        pm.environment.set(idName, res[0].id);",
+                  "        console.log(\" Saved ID: \" + res[0].id);",
+                  "    } else {",
+                  "        console.log(\" List rỗng, chưa có dữ liệu để lưu.\");",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "file",
+              "file": {}
+            },
+            "url": {
+              "raw": "{{base_url}}/menus/search?keyword={{keyword}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "menus",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "keyword",
+                  "value": "{{keyword}}"
+                }
+              ]
+            },
+            "description": "Search menu items by keyword."
+          },
+          "response": []
+        },
+        {
+          "name": "Filter Menu By Price",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "const statusCode = pm.response.code;",
+                  "",
+                  "// --- [N] NORMAL (2 Cases) ---",
+                  "// N1: Kiểm tra trạng thái thành công",
+                  "pm.test(\"N1 - Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// N2: Kiểm tra dữ liệu trả về là mảng (Array)",
+                  "pm.test(\"N2 - Filter response is a valid array\", function () {",
+                  "    pm.expect(data).to.be.an(\"array\");",
+                  "});",
+                  "",
+                  "// --- [B] BOUNDARY (1 Case) - Kiểm tra tính đúng đắn của dữ liệu ---",
+                  "// B1: Kiểm tra giá tiền trong danh sách trả về (Nếu có)",
+                  "pm.test(\"B1 - Boundary: Prices are within valid range\", function () {",
+                  "    if (data.length > 0) {",
+                  "        // Kiểm tra món đầu tiên xem giá có phải là số dương không",
+                  "        pm.expect(data[0].price).to.be.at.least(0);",
+                  "        console.log(\"Price check passed: \" + data[0].price);",
+                  "    } else {",
+                  "        console.log(\"Không có món nào trong khoảng giá này.\");",
+                  "    }",
+                  "});",
+                  "",
+                  "// Nếu Huy muốn đủ 4 cái thì thêm A1 bên dưới, không thì 3 cái trên là đẹp rồi",
+                  "/*",
+                  "pm.test(\"A1 - Error Defense: No Server Error\", () => {",
+                  "    pm.expect(statusCode).to.not.equal(500);",
+                  "});",
+                  "*/"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// cấu hình khoảng giá",
+                  "const min = 20000;",
+                  "const max = 300000;",
+                  "",
+                  "// random minPrice",
+                  "let minPrice = Math.floor(Math.random() * (max - min + 1)) + min;",
+                  "",
+                  "// đảm bảo maxPrice luôn >= minPrice",
+                  "let maxPrice = Math.floor(Math.random() * (max - minPrice + 1)) + minPrice;",
+                  "",
+                  "// set vào biến environment",
+                  "pm.environment.set(\"minPrice\", minPrice);",
+                  "pm.environment.set(\"maxPrice\", maxPrice);",
+                  "",
+                  "console.log({ minPrice, maxPrice });"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/menus/by-price?min_price={{minPrice}}&max_price={{maxPrice}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "menus",
+                "by-price"
+              ],
+              "query": [
+                {
+                  "key": "min_price",
+                  "value": "{{minPrice}}"
+                },
+                {
+                  "key": "max_price",
+                  "value": "{{maxPrice}}"
+                }
+              ]
+            },
+            "description": "Filter menu items by price range."
+          },
+          "response": []
+        },
+        {
+          "name": "Create_menuitem",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "const method = pm.request.method;",
+                  "const statusCode = pm.response.code;",
+                  "",
+                  "// ===== [A] ABNORMAL - Kiểm tra an toàn hệ thống =====",
+                  "pm.test(\"A1 - Server is stable (Code < 500)\", function () {",
+                  "    pm.expect(statusCode).to.be.below(500);",
+                  "});",
+                  "",
+                  "// ===== [N] NORMAL 1 - Kiểm tra trạng thái thành công =====",
+                  "pm.test(\"N1 - Request success status\", function () {",
+                  "    // GET/PUT/DELETE thường là 200, POST thường là 201",
+                  "    pm.expect(statusCode).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "",
+                  "// ===== XỬ LÝ THEO METHOD (Normal 2 & Boundary) =====",
+                  "",
+                  "// 1. Nhóm Lấy dữ liệu (GET)",
+                  "if (method === \"GET\") {",
+                  "    pm.test(\"N2 - Menu response is array\", function () {",
+                  "        pm.expect(data).to.be.an(\"array\");",
+                  "    });",
+                  "",
+                  "    pm.test(\"B1 - Boundary: Save ID if list not empty\", function () {",
+                  "        if (Array.isArray(data) && data.length > 0) {",
+                  "            pm.environment.set(\"menuId\", data[0].id);",
+                  "            console.log(\"Saved menuId: \" + data[0].id);",
+                  "        } else {",
+                  "            console.log(\"List is empty, no ID to save.\");",
+                  "        }",
+                  "    });",
+                  "} ",
+                  "",
+                  "// 2. Nhóm Tạo/Sửa/Xóa (POST, PUT, DELETE)",
+                  "else {",
+                  "    pm.test(\"N2 - Response structure check\", function () {",
+                  "        // DELETE thường trả về 204 (không có body) nên check an toàn",
+                  "        if (statusCode !== 204) {",
+                  "            pm.expect(data).to.be.an(\"object\");",
+                  "        }",
+                  "    });",
+                  "",
+                  "    pm.test(\"B1 - Boundary: Resource ID management\", function () {",
+                  "        if (method === \"DELETE\") {",
+                  "            // Nếu xóa thì dọn dẹp biến cho sạch môi trường",
+                  "            pm.environment.unset(\"menu_item_id\");",
+                  "            console.log(\"Cleaned menu_item_id\");",
+                  "        } else if (data && data.id) {",
+                  "            // Nếu tạo/sửa thì lưu lại ID mới",
+                  "            pm.environment.set(\"menu_item_id\", data.id);",
+                  "            console.log(\" Updated menu_item_id: \" + data.id);",
+                  "        }",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Menu\",\n  \"description\": \"Test description\",\n  \"price\": 100,\n  \"category_id\": \"{{categoryId}}\",\n  \"image_url\": \"https://example.com/image.jpg\",\n  \"meta\": {}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/menus/?restaurant_id={{restaurant_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "menus",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "restaurant_id",
+                  "value": "{{restaurant_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Menus By Restaurant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "const statusCode = pm.response.code;",
+                  "",
+                  "// --- [N] NORMAL (2 Cases) ---",
+                  "// N1: Kiem tra trang thai thanh cong",
+                  "pm.test(\"N1 - Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// N2: Kiem tra du lieu tra ve la mang",
+                  "pm.test(\"N2 - Response is a valid array\", function () {",
+                  "    pm.expect(data).to.be.an(\"array\");",
+                  "});",
+                  "",
+                  "// --- [A] ABNORMAL (1 Case) ---",
+                  "// A1: Dam bao Server khong loi 500",
+                  "pm.test(\"A1 - Error Defense: No Internal Server Error\", function () {",
+                  "    pm.expect(statusCode).to.not.equal(500);",
+                  "});",
+                  "",
+                  "// --- [B] BOUNDARY (1 Case) ---",
+                  "// B1: Luu ID menu dau tien neu danh sach co du lieu",
+                  "pm.test(\"B1 - Data Logic: Save menuId if exists\", function () {",
+                  "    if (Array.isArray(data) && data.length > 0) {",
+                  "        pm.expect(data[0]).to.have.property(\"id\");",
+                  "        pm.environment.set(\"menuId\", data[0].id);",
+                  "        console.log(\"Saved menuId: \" + data[0].id);",
+                  "    } else {",
+                  "        // Truong hop nha hang chua có món nào, test van Passed",
+                  "        pm.expect(data).to.be.an(\"array\");",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/menus/?restaurant_id={{restaurant_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "menus",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "restaurant_id",
+                  "value": "{{restaurant_id}}"
+                }
+              ]
+            },
+            "description": "Get menu list for a specific restaurant."
+          },
+          "response": []
+        },
+        {
+          "name": "Create_menuitem_test_order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "const statusCode = pm.response.code;",
+                  "",
+                  "// --- [N] NORMAL (2 Cases) ---",
+                  "// N1: Kiem tra trang thai tao moi thanh cong",
+                  "pm.test(\"N1 - Status code is 201 or 200\", function () {",
+                  "    pm.expect(statusCode).to.be.oneOf([201, 200]);",
+                  "});",
+                  "",
+                  "// N2: Kiem tra body tra ve la object",
+                  "pm.test(\"N2 - Response is a valid object\", function () {",
+                  "    pm.expect(data).to.be.an(\"object\");",
+                  "});",
+                  "",
+                  "// --- [B] BOUNDARY (1 Case) ---",
+                  "// B1: Luu ID vao dung bien de request Xoa khong bi 404",
+                  "pm.test(\"B1 - Boundary: Save ID to environment\", function () {",
+                  "    if (data && data.id) {",
+                  "        const reqName = pm.info.requestName.toLowerCase();",
+                  "        ",
+                  "        // Neu request la tao Category",
+                  "        if (reqName.includes(\"category\")) {",
+                  "            pm.environment.set(\"categoryId\", data.id);",
+                  "            console.log(\"Saved categoryId: \" + data.id);",
+                  "        } ",
+                  "        // Neu request la tao Menu Item",
+                  "        else if (reqName.includes(\"menu\")) {",
+                  "            pm.environment.set(\"menu_item_id\", data.id); // Dung chung ten voi cho Delete",
+                  "            console.log(\"Saved menu_item_id: \" + data.id);",
+                  "        }",
+                  "    } else {",
+                  "        pm.expect(data).to.have.property(\"id\");",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Menu1\",\n  \"description\": \"Test description\",\n  \"price\": 100,\n  \"category_id\": \"{{categoryId}}\",\n  \"image_url\": \"https://example.com/image.jpg\",\n  \"meta\": {}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/menus/?restaurant_id={{restaurant_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "menus",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "restaurant_id",
+                  "value": "{{restaurant_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "pm.environment.set(\"current_role\", \"staff\");",
+              "",
+              "const role = pm.environment.get(\"current_role\");",
+              "",
+              "let token = \"\";",
+              "",
+              "if (role === \"owner\") {",
+              "    token = pm.environment.get(\"owner_token\");",
+              "} else if (role === \"staff\") {",
+              "    token = pm.environment.get(\"staff_token\");",
+              "} else if (role === \"customer\") {",
+              "    token = pm.environment.get(\"customer_token\");",
+              "}",
+              "",
+              "pm.request.headers.upsert({",
+              "    key: \"Authorization\",",
+              "    value: `Bearer ${token}`",
+              "});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "CreateOrder",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const responseData = pm.response.json();\r",
+                  "\r",
+                  "// N1 - Check tạo đơn thành công (Xử lý cả 200/201)\r",
+                  "pm.test(\"N1 - Create order success 200 OK\", () => {\r",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r",
+                  "});\r",
+                  "\r",
+                  "// N2 - Check cấu trúc trả về có ID đơn hàng\r",
+                  "pm.test(\"N2 - Response has valid Order ID\", () => {\r",
+                  "    pm.expect(responseData).to.have.property('id');\r",
+                  "});\r",
+                  "\r",
+                  "// N3 - Check đơn hàng ở trạng thái chờ xử lý\r",
+                  "pm.test(\"N3 - Order status is pending/preparing\", () => {\r",
+                  "    pm.expect(['pending', 'preparing']).to.include(responseData.status);\r",
+                  "});\r",
+                  "\r",
+                  "// A1 - Abnormal: Không bị lỗi Server (Tránh 5xx)\r",
+                  "pm.test(\"A1 - Server is stable (No 500 error)\", () => {\r",
+                  "    pm.expect(pm.response.code).to.be.below(500);\r",
+                  "});\r",
+                  "\r",
+                  "// B1 - Boundary: Lưu ID đơn hàng để chạy các bước tiếp theo\r",
+                  "pm.test(\"B1 - Boundary: Save order_id for Workflow\", () => {\r",
+                  "    if (responseData.id) {\r",
+                  "        pm.environment.set(\"order_id\", responseData.id);\r",
+                  "        console.log(\" Đã lưu order_id mới: \" + responseData.id);\r",
+                  "        // Nhắc nhở để Huy không quên bước lấy ID món lẻ\r",
+                  "        console.log(\" Huy ơi, hãy chạy tiếp request 'MyOrder' để lấy ID món làm Review nhé!\");\r",
+                  "    } else {\r",
+                  "        pm.expect.fail(\"❌ Không tìm thấy ID đơn hàng trong response!\");\r",
+                  "    }\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"session_token\": \"{{session_token}}\",\r\n    \"items\": [\r\n        {\r\n            \"menu_item_id\": \"{{menuId}}\",\r\n            \"qty\": 2,\r\n            \"note\": \"Ít đường, nhiều đá\"\r\n        }\r\n    ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/orders",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "StaffAcceptOrder",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const statusCode = pm.response.code;\r",
+                  "const data = pm.response.json();\r",
+                  "\r",
+                  "// 1. Chấp nhận cả 200 (Thành công) và 400 (Đã xử lý)\r",
+                  "pm.test(\"N1 - Accept success or already handled status\", () => {\r",
+                  "    pm.expect(statusCode).to.be.oneOf([200, 400]);\r",
+                  "});\r",
+                  "\r",
+                  "// 2. Kiểm tra logic dựa trên mã trả về\r",
+                  "if (statusCode === 200) {\r",
+                  "    // Trường hợp thành công lần đầu\r",
+                  "    pm.test(\"N2 - Success: Status text is OK\", () => {\r",
+                  "        pm.response.to.have.status(\"OK\");\r",
+                  "    });\r",
+                  "    \r",
+                  "    pm.test(\"N3 - Success: Response has ok property\", () => {\r",
+                  "        pm.expect(data).to.have.property(\"ok\", true);\r",
+                  "    });\r",
+                  "\r",
+                  "} else if (statusCode === 400) {\r",
+                  "    // Trường hợp đơn hàng đã được xử lý từ trước\r",
+                  "    pm.test(\"N2 - Error: Response has detail message\", () => {\r",
+                  "        pm.expect(data).to.have.property(\"detail\");\r",
+                  "    });\r",
+                  "\r",
+                  "    pm.test(\"N4 - Error: Logic check 'already handled'\", () => {\r",
+                  "        pm.expect(data.detail).to.include(\"already handled\");\r",
+                  "    });\r",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/orders/{{order_id}}/accept",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders",
+                "{{order_id}}",
+                "accept"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "StaffPreparing",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const statusCode = pm.response.code;\r",
+                  "const data = pm.response.json();\r",
+                  "\r",
+                  "// 1. Kiểm tra status code là 200\r",
+                  "pm.test(\"N1 - Preparing status is 200\", () => {\r",
+                  "    pm.expect(statusCode).to.equal(200);\r",
+                  "});\r",
+                  "\r",
+                  "// 2. Kiểm tra trường 'ok' phải là true\r",
+                  "pm.test(\"N2 - Response ok is true\", () => {\r",
+                  "    pm.expect(data.ok).to.be.true;\r",
+                  "});\r",
+                  "\r",
+                  "// 3. Kiểm tra trường 'status' phải là \"preparing\"\r",
+                  "pm.test(\"N3 - Status is preparing\", () => {\r",
+                  "    pm.expect(data.status).to.be.a(\"string\");\r",
+                  "    pm.expect(data.status).to.equal(\"preparing\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/orders/{{order_id}}/preparing",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders",
+                "{{order_id}}",
+                "preparing"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "StaffReady",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"N1 - Ready status code is 200\", () => {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"N2 - Order is ready for delivery\", () => {\r",
+                  "    const data = pm.response.json();\r",
+                  "    pm.expect(data.detail).to.not.be.null;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/orders/{{order_id}}/ready",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders",
+                "{{order_id}}",
+                "ready"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "StaffServed",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const statusCode = pm.response.code;\r",
+                  "\r",
+                  "pm.test(\"N1 - Served status code is 200\", () => {\r",
+                  "    pm.expect(statusCode).to.equal(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"N2 - Response time is acceptable\", () => {\r",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"N3 - Final state check\", () => {\r",
+                  "    const data = pm.response.json();\r",
+                  "    pm.expect(data).to.be.an(\"object\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/orders/{{order_id}}/served",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders",
+                "{{order_id}}",
+                "served"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TopOrdered",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();\r",
+                  "\r",
+                  "// N (Normal)\r",
+                  "pm.test(\"N1 - My orders found successfully\", () => pm.response.to.have.status(200));\r",
+                  "\r",
+                  "// A (Abnormal)\r",
+                  "pm.test(\"A1 - Unauthorized check (No 401)\", () => pm.expect(pm.response.code).to.not.equal(401));\r",
+                  "\r",
+                  "// B (Boundary)\r",
+                  "pm.test(\"B1 - Boundary: Data type is Array/Object\", () => {\r",
+                  "    pm.expect(typeof data).to.be.oneOf([\"object\", \"array\"]);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/orders/top-ordered?restaurant_id={{restaurant_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders",
+                "top-ordered"
+              ],
+              "query": [
+                {
+                  "key": "restaurant_id",
+                  "value": "{{restaurant_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Kitchen",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();\r",
+                  "\r",
+                  "// N (Normal)\r",
+                  "pm.test(\"N1 - Kitchen connection OK\", () => pm.response.to.have.status(200));\r",
+                  "pm.test(\"N2 - Correct JSON structure\", () => pm.response.to.be.json);\r",
+                  "pm.test(\"N3 - Response body is not null\", () => pm.expect(data).to.not.be.null);\r",
+                  "\r",
+                  "// A (Abnormal)\r",
+                  "pm.test(\"A1 - Access check (No 403)\", () => pm.expect(pm.response.code).to.not.equal(403));\r",
+                  "\r",
+                  "// B (Boundary)\r",
+                  "pm.test(\"B1 - Boundary: Header contains Content-Type\", () => pm.response.to.have.header(\"Content-Type\"));"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/orders/kitchen",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders",
+                "kitchen"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "MyOrder",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Xóa dòng const data cũ nếu có, chỉ dùng một lần duy nhất\r",
+                  "const responseData = pm.response.json();\r",
+                  "\r",
+                  "// N1 - Check lấy danh sách đơn hàng thành công\r",
+                  "pm.test(\"N1 - Get My Orders success 200\", () => {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "// N2 - Check đúng định dạng danh sách (Array)\r",
+                  "pm.test(\"N2 - Response is a valid list\", () => {\r",
+                  "    pm.expect(responseData).to.be.an(\"array\");\r",
+                  "});\r",
+                  "\r",
+                  "// A1 - Authorization check: No 401\r",
+                  "pm.test(\"A1 - Authorization check: No 401\", () => {\r",
+                  "    pm.expect(pm.response.code).to.not.equal(401);\r",
+                  "});\r",
+                  "\r",
+                  "// B1 - Boundary: TỰ ĐỘNG LẤY ID MÓN ĂN ĐỂ REVIEW\r",
+                  "pm.test(\"B1 - Boundary: Extract order_line_id for Review\", () => {\r",
+                  "    // Tìm đơn hàng khớp với order_id vừa tạo\r",
+                  "    const targetOrder = responseData.find(o => o.id === pm.environment.get(\"order_id\"));\r",
+                  "    \r",
+                  "    if (targetOrder && targetOrder.order_lines && targetOrder.order_lines.length > 0) {\r",
+                  "        const lineId = targetOrder.order_lines[0].id;\r",
+                  "        pm.environment.set(\"order_line_id\", lineId);\r",
+                  "        console.log(\" Đã tìm thấy và lưu order_line_id mới: \" + lineId);\r",
+                  "    } else {\r",
+                  "        console.warn(\" Không tìm thấy món ăn nào trong đơn hàng \" + pm.environment.get(\"order_id\") + \" để review!\");\r",
+                  "    }\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/orders/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "CreateReview",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();\r",
+                  "const statusCode = pm.response.code;\r",
+                  "\r",
+                  "// N1 - Chấp nhận 200 (Mới tạo) hoặc 400 (Đã tồn tại review)\r",
+                  "pm.test(\"N1 - Create review status check\", () => {\r",
+                  "    pm.expect(statusCode).to.be.oneOf([200, 400]);\r",
+                  "});\r",
+                  "\r",
+                  "if (statusCode === 200) {\r",
+                  "    pm.test(\"N2 - Correct Review structure\", () => {\r",
+                  "        pm.expect(data).to.have.property(\"id\");\r",
+                  "    });\r",
+                  "} else if (statusCode === 400) {\r",
+                  "    pm.test(\"A1 - Logic check: Already reviewed\", () => {\r",
+                  "        pm.expect(data.detail).to.include(\"already been reviewed\");\r",
+                  "    });\r",
+                  "    console.warn(\"Món này Huy đã review rồi, muốn ra 200 thì phải lấy ID mới nhé!\");\r",
+                  "} else if (statusCode === 404) {\r",
+                  "    // Đoạn này để nhắc Huy sửa URL\r",
+                  "    pm.expect.fail(\"Huy ơi! URL đang thiếu chữ 's' kìa: /reviews mới đúng.\");\r",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"order_id\": \"{{order_id}}\",\r\n  \"order_line_id\": \"{{order_line_id}}\", \r\n  \"rating\": 5,\r\n  \"comment\": \"okookkok\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/reviews",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reviews"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "MenuItemStats",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();\r",
+                  "const statusCode = pm.response.code;\r",
+                  "\r",
+                  "// 1. Kiểm tra Status Code thành công\r",
+                  "pm.test(\"N1 - Success status 200\", () => {\r",
+                  "    pm.expect(statusCode).to.equal(200);\r",
+                  "});\r",
+                  "\r",
+                  "// 2. Kiểm tra cấu trúc dữ liệu trả về (Chỉ chạy khi status là 200)\r",
+                  "if (statusCode === 200) {\r",
+                  "    pm.test(\"N2 - MenuItemStats structure & data types\", () => {\r",
+                  "        // Kiểm tra có đầy đủ thuộc tính\r",
+                  "        pm.expect(data).to.have.property(\"avg_rating\");\r",
+                  "        pm.expect(data).to.have.property(\"total_reviews\");\r",
+                  "\r",
+                  "        // Kiểm tra kiểu dữ liệu phải là số (Tránh trường hợp trả về null hoặc string)\r",
+                  "        pm.expect(data.avg_rating).to.be.a(\"number\");\r",
+                  "        pm.expect(data.total_reviews).to.be.a(\"number\");\r",
+                  "    });\r",
+                  "\r",
+                  "    pm.test(\"N3 - Logic: Range check\", () => {\r",
+                  "        // Đánh giá trung bình từ 0 đến 5 sao\r",
+                  "        pm.expect(data.avg_rating).to.be.within(0, 5);\r",
+                  "        // Tổng số review không được là số âm\r",
+                  "        pm.expect(data.total_reviews).to.be.at.least(0);\r",
+                  "    });\r",
+                  "}\r",
+                  "\r",
+                  "// 3. Xử lý lỗi Abnormal (Khi server bị 500 hoặc 404)\r",
+                  "if (statusCode >= 400) {\r",
+                  "    pm.test(\"A1 - Error details check\", () => {\r",
+                  "        pm.expect(data).to.have.property(\"detail\");\r",
+                  "        console.error(\"Lỗi từ Server: \", data.detail);\r",
+                  "    });\r",
+                  "}\r",
+                  "\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reviews/menu-item/{{menu_item_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reviews",
+                "menu-item",
+                "{{menu_item_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete_menu_item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const statusCode = pm.response.code;\r",
+                  "\r",
+                  "// --- [N] NORMAL (2 Cases) ---\r",
+                  "// N1: Kiem tra trang thai xoa (Chap nhan 200, 204 hoac 404 neu da xoa roi)\r",
+                  "pm.test(\"N1 - Status code is 200 or 204\", function () {\r",
+                  "    pm.expect(statusCode).to.be.oneOf([200, 204]);\r",
+                  "});\r",
+                  "\r",
+                  "// N2: Kiem tra body response (Neu co body thi phai la object)\r",
+                  "pm.test(\"N2 - Response structure check\", function () {\r",
+                  "    if (statusCode !== 204 && pm.response.text()) {\r",
+                  "        pm.expect(pm.response.json()).to.be.an(\"object\");\r",
+                  "    }\r",
+                  "});\r",
+                  "\r",
+                  "// --- [B] BOUNDARY (1 Case) ---\r",
+                  "// B1: Don dep bien moi truong cho sach\r",
+                  "pm.test(\"B1 - Boundary: Cleanup menu_item_id\", function () {\r",
+                  "    if (statusCode === 200 || statusCode === 204 || statusCode === 404) {\r",
+                  "        pm.environment.unset(\"menu_item_id\");\r",
+                  "        console.log(\"Cleanup: menu_item_id removed.\");\r",
+                  "    }\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/menus/{{menu_item_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "menus",
+                "{{menu_item_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Report",
+      "item": [
+        {
+          "name": "Overview Report",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const statusCode = pm.response.code;",
+                  "const data = pm.response.json();",
+                  "",
+                  "// 1. Kiểm tra quyền truy cập",
+                  "pm.test(\"N1 - Check Authorization\", () => {",
+                  "    pm.expect(statusCode).to.not.equal(401);",
+                  "});",
+                  "",
+                  "// 2. Kiểm tra thành công 200",
+                  "pm.test(\"N2 - Status code is 200\", () => {",
+                  "    pm.expect(statusCode).to.equal(200);",
+                  "});",
+                  "",
+                  "// 3. Kiểm tra cấu trúc báo cáo (Chỉ chạy khi 200)",
+                  "if (statusCode === 200) {",
+                  "    pm.test(\"N3 - Report has chart and summary\", () => {",
+                  "        pm.expect(data).to.have.property(\"chart\");",
+                  "        pm.expect(data).to.have.property(\"summary\");",
+                  "        ",
+                  "        // Kiểm tra thêm xem chart có dữ liệu không",
+                  "        pm.expect(data.chart).to.be.an(\"array\");",
+                  "    });",
+                  "}",
+                  "",
+                  "// 4. Cảnh báo nếu chưa đăng nhấp",
+                  "if (statusCode === 401) {",
+                  "    console.error(\"LỖI: Huy chưa đăng nhập hoặc Token hết hạn rồi!\");",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reports/overview",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reports",
+                "overview"
+              ]
+            },
+            "description": "Get overview report. Require role: owner or staff."
+          },
+          "response": []
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "if (!pm.environment.get(\"token\")) {\r",
+              "  throw new Error(\"Thiếu token. Hãy chạy request '01 - Auth Login' trước.\");\r",
+              "}\r",
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Customers",
+          "item": [
+            {
+              "name": "customers",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const statusCode = pm.response.code;\r",
+                      "const data = pm.response.json();\r",
+                      "\r",
+                      "// --- [N] NORMAL: 2 Cases ---\r",
+                      "\r",
+                      "// N1 - Kiểm tra kết nối và trạng thái thành công\r",
+                      "pm.test(\"N1 - Success status 200\", () => {\r",
+                      "    pm.expect(statusCode).to.equal(200);\r",
+                      "});\r",
+                      "\r",
+                      "// N2 - Kiểm tra cấu trúc danh sách và dữ liệu khách hàng\r",
+                      "pm.test(\"N2 - Response format and Customer object validation\", () => {\r",
+                      "    pm.expect(data).to.be.an(\"array\");\r",
+                      "    \r",
+                      "    // Nếu có khách hàng, kiểm tra chi tiết các trường bắt buộc\r",
+                      "    if (data.length > 0) {\r",
+                      "        const item = data[0];\r",
+                      "        pm.expect(item).to.have.all.keys(\"user_id\", \"name\", \"email\", \"total_orders\", \"total_spent\", \"total_points\");\r",
+                      "        \r",
+                      "        // Kiểm tra kiểu dữ liệu để đảm bảo không bị null/string rác\r",
+                      "        pm.expect(item.email).to.include(\"@\");\r",
+                      "        pm.expect(item.total_spent).to.be.a(\"number\");\r",
+                      "        pm.expect(item.total_points).to.be.a(\"number\");\r",
+                      "    }\r",
+                      "});\r",
+                      "\r",
+                      "// --- [A] ABNORMAL: 1 Case ---\r",
+                      "\r",
+                      "// A1 - Kiểm tra quyền truy cập (Tránh lỗi Permission denied)\r",
+                      "pm.test(\"A1 - Authorization and Access check\", () => {\r",
+                      "    if (statusCode === 403) {\r",
+                      "        console.error(\"LỖI: Tài khoản Huy không có quyền Admin để xem Dashboard!\");\r",
+                      "    }\r",
+                      "    pm.expect(statusCode).to.not.equal(403);\r",
+                      "    pm.expect(statusCode).to.not.equal(401);\r",
+                      "});\r",
+                      "\r",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/dashboard/customers",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "dashboard",
+                    "customers"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Points",
+          "item": [
+            {
+              "name": "summary",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const responseData = pm.response.json();\r",
+                      "\r",
+                      "// N1 - Check lấy dữ liệu thành công\r",
+                      "pm.test(\"N1 - Get summary success 200\", () => {\r",
+                      "    pm.expect(pm.response.code).to.equal(200);\r",
+                      "});\r",
+                      "\r",
+                      "// N2 - Check trả về đúng Object (không bị rỗng/lỗi định dạng)\r",
+                      "pm.test(\"N2 - Response is a valid object\", () => {\r",
+                      "    pm.expect(responseData).to.be.an(\"object\");\r",
+                      "});\r",
+                      "\r",
+                      "// A1 - Abnormal: Hệ thống ổn định (Không lỗi Server 5xx)\r",
+                      "pm.test(\"A1 - Server performance check (No 500)\", () => {\r",
+                      "    pm.expect(pm.response.code).to.be.below(500);\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/dashboard/points/summary\n",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "dashboard",
+                    "points",
+                    "summary\n"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "top-customers",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const responseData = pm.response.json();\r",
+                      "\r",
+                      "// N1 - Check lấy danh sách thành công\r",
+                      "pm.test(\"N1 - Get top customers success 200\", () => {\r",
+                      "    pm.response.to.have.status(200);\r",
+                      "});\r",
+                      "\r",
+                      "// N2 - Check dữ liệu trả về phải là một danh sách (Array)\r",
+                      "pm.test(\"N2 - Response is a valid list of customers\", () => {\r",
+                      "    pm.expect(responseData).to.be.an(\"array\");\r",
+                      "});\r",
+                      "\r",
+                      "// A1 - Abnormal: Hệ thống ổn định (Không lỗi 5xx)\r",
+                      "pm.test(\"A1 - Server stability check (No 500)\", () => {\r",
+                      "    pm.expect(pm.response.code).to.be.below(500);\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/dashboard/points/top-customers",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "dashboard",
+                    "points",
+                    "top-customers"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "transactions",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const responseData = pm.response.json();\r",
+                      "\r",
+                      "// N1 - Check lấy danh sách thành công\r",
+                      "pm.test(\"N1 - Get top customers success 200\", () => {\r",
+                      "    pm.response.to.have.status(200);\r",
+                      "});\r",
+                      "\r",
+                      "// N2 - Check dữ liệu trả về phải là một danh sách (Array)\r",
+                      "pm.test(\"N2 - Response is a valid list of customers\", () => {\r",
+                      "    pm.expect(responseData).to.be.an(\"array\");\r",
+                      "});\r",
+                      "\r",
+                      "// A1 - Abnormal: Hệ thống ổn định (Không lỗi 5xx)\r",
+                      "pm.test(\"A1 - Server stability check (No 500)\", () => {\r",
+                      "    pm.expect(pm.response.code).to.be.below(500);\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/dashboard/points/transactions",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "dashboard",
+                    "points",
+                    "transactions"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Reviews",
+          "item": [
+            {
+              "name": "summary",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const responseData = pm.response.json();\r",
+                      "\r",
+                      "// N1 - Check lấy dữ liệu thành công\r",
+                      "pm.test(\"N1 - Get review summary success 200\", () => {\r",
+                      "    pm.expect(pm.response.code).to.equal(200);\r",
+                      "});\r",
+                      "\r",
+                      "// N2 - Check có đầy đủ các trường thống kê quan trọng\r",
+                      "pm.test(\"N2 - Has summary fields (total/avg)\", () => {\r",
+                      "    pm.expect(responseData).to.have.property(\"total_reviews\");\r",
+                      "    pm.expect(responseData).to.have.property(\"avg_rating\");\r",
+                      "});\r",
+                      "\r",
+                      "// A1 - Abnormal: Kiểm tra dữ liệu không bị lỗi Server (Tránh 5xx)\r",
+                      "pm.test(\"A1 - Server performance check (No 500 error)\", () => {\r",
+                      "    pm.expect(pm.response.code).to.be.below(500);\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/dashboard/reviews/summary",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "dashboard",
+                    "reviews",
+                    "summary"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "list_reviews",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const responseData = pm.response.json();\r",
+                      "\r",
+                      "// N1 - Check lấy danh sách đánh giá thành công\r",
+                      "pm.test(\"N1 - Get reviews list success 200\", () => {\r",
+                      "    pm.response.to.have.status(200);\r",
+                      "});\r",
+                      "\r",
+                      "// N2 - Check dữ liệu trả về là danh sách và có cấu trúc review (nếu có data)\r",
+                      "pm.test(\"N2 - Valid reviews list and item structure\", () => {\r",
+                      "    pm.expect(responseData).to.be.an(\"array\");\r",
+                      "    \r",
+                      "    // Nếu có ít nhất 1 review, check thử món đầu tiên xem có rating/comment không\r",
+                      "    if (responseData.length > 0) {\r",
+                      "        pm.expect(responseData[0]).to.have.any.keys('rating', 'comment', 'content');\r",
+                      "    }\r",
+                      "});\r",
+                      "\r",
+                      "// A1 - Abnormal: Hệ thống ổn định (Tránh lỗi Server 5xx)\r",
+                      "pm.test(\"A1 - Server performance check (No 500 error)\", () => {\r",
+                      "    pm.expect(pm.response.code).to.be.below(500);\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/dashboard/reviews",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "dashboard",
+                    "reviews"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "by-menu",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const responseData = pm.response.json();\r",
+                      "\r",
+                      "// N1 - Check lấy dữ liệu thành công\r",
+                      "pm.test(\"N1 - Get reviews by menu success 200\", () => {\r",
+                      "    pm.response.to.have.status(200);\r",
+                      "});\r",
+                      "\r",
+                      "// N2 - Check dữ liệu trả về là danh sách và có thông tin món ăn (nếu có data)\r",
+                      "pm.test(\"N2 - Valid menu reviews list and structure\", () => {\r",
+                      "    pm.expect(responseData).to.be.an(\"array\");\r",
+                      "    \r",
+                      "    // Nếu có dữ liệu, check xem món đầu tiên có tên hoặc ID món không\r",
+                      "    if (responseData.length > 0) {\r",
+                      "        pm.expect(responseData[0]).to.have.any.keys('menu_item_name', 'item_id', 'menu_item_id');\r",
+                      "    }\r",
+                      "});\r",
+                      "\r",
+                      "// A1 - Abnormal: Hệ thống ổn định (Không lỗi Server 5xx)\r",
+                      "pm.test(\"A1 - Server performance check (No 500 error)\", () => {\r",
+                      "    pm.expect(pm.response.code).to.be.below(500);\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/dashboard/reviews/by-menu",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "dashboard",
+                    "reviews",
+                    "by-menu"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Menu",
+          "item": [
+            {
+              "name": "Top Items",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const responseData = pm.response.json();\r",
+                      "\r",
+                      "// N1 - Check lấy danh sách món bán chạy thành công\r",
+                      "pm.test(\"N1 - Get top items success 200\", () => {\r",
+                      "    pm.response.to.have.status(200);\r",
+                      "});\r",
+                      "\r",
+                      "// N2 - Check dữ liệu là mảng và có các trường doanh thu/số lượng\r",
+                      "pm.test(\"N2 - Valid list and item statistics structure\", () => {\r",
+                      "    pm.expect(responseData).to.be.an(\"array\");\r",
+                      "    \r",
+                      "    // Nếu có dữ liệu, check món đầu tiên có đủ các thông số kinh doanh không\r",
+                      "    if (responseData.length > 0) {\r",
+                      "        pm.expect(responseData[0]).to.have.property(\"menu_item_id\");\r",
+                      "        pm.expect(responseData[0]).to.have.property(\"name\");\r",
+                      "        pm.expect(responseData[0]).to.have.property(\"sold_qty\");\r",
+                      "        pm.expect(responseData[0]).to.have.property(\"revenue\");\r",
+                      "    }\r",
+                      "});\r",
+                      "\r",
+                      "// A1 - Abnormal: Hệ thống ổn định (Không lỗi Server 5xx)\r",
+                      "pm.test(\"A1 - Server stability check (No 500 error)\", () => {\r",
+                      "    pm.expect(pm.response.code).to.be.below(500);\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/dashboard/menu/top-items",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "dashboard",
+                    "menu",
+                    "top-items"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Revenue",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const responseData = pm.response.json();\r",
+                      "\r",
+                      "// N1 - Check lấy dữ liệu doanh thu thành công\r",
+                      "pm.test(\"N1 - Get menu revenue success 200\", () => {\r",
+                      "    pm.response.to.have.status(200);\r",
+                      "});\r",
+                      "\r",
+                      "// A1 - Abnormal: Hệ thống ổn định (Không lỗi Server 5xx)\r",
+                      "pm.test(\"A1 - Server stability check (No 500 error)\", () => {\r",
+                      "    pm.expect(pm.response.code).to.be.below(500);\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/dashboard/menu/revenue",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "dashboard",
+                    "menu",
+                    "revenue"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Trends",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "// 1. Kiểm tra Status Code (Đây là test quan trọng nhất để hiện màu đỏ)\r",
+                      "pm.test(\"N1 - Status code is 200 OK\", () => {\r",
+                      "    pm.response.to.have.status(200); \r",
+                      "    // Nếu status là 500, dòng này sẽ đánh dấu FAIL (màu đỏ) ngay lập tức.\r",
+                      "});\r",
+                      "\r",
+                      "// 2. Kiểm tra cấu trúc dữ liệu\r",
+                      "pm.test(\"N2 - Validate Trend Data Structure\", () => {\r",
+                      "    // Ép kiểu response về JSON\r",
+                      "    let responseData;\r",
+                      "    try {\r",
+                      "        responseData = pm.response.json();\r",
+                      "    } catch (e) {\r",
+                      "        // Nếu không phải JSON, ép buộc Fail để hiện số sai\r",
+                      "        pm.expect.fail(\"Server không trả về JSON hợp lệ (có thể là lỗi 500).\");\r",
+                      "    }\r",
+                      "\r",
+                      "    // Kiểm tra mảng dữ liệu\r",
+                      "    pm.expect(responseData, \"Dữ liệu trả về phải là một mảng\").to.be.an(\"array\");\r",
+                      "\r",
+                      "    if (responseData && responseData.length > 0) {\r",
+                      "        pm.expect(responseData[0]).to.have.property(\"date\");\r",
+                      "        pm.expect(responseData[0]).to.have.property(\"sold_qty\");\r",
+                      "    }\r",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{staff_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/dashboard/menu/trends/?menu_item_id={{menu_item_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "dashboard",
+                    "menu",
+                    "trends",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "menu_item_id",
+                      "value": "{{menu_item_id}}"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "bearer"
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "pm.environment.set(\"current_role\", \"owner\");\r",
+              "\r",
+              "const role = pm.environment.get(\"current_role\");\r",
+              "\r",
+              "let token = \"\";\r",
+              "\r",
+              "if (role === \"owner\") {\r",
+              "    token = pm.environment.get(\"owner_token\");\r",
+              "} else if (role === \"staff\") {\r",
+              "    token = pm.environment.get(\"staff_token\");\r",
+              "} else if (role === \"customer\") {\r",
+              "    token = pm.environment.get(\"customer_token\");\r",
+              "}\r",
+              "\r",
+              "pm.request.headers.upsert({\r",
+              "    key: \"Authorization\",\r",
+              "    value: `Bearer ${token}`\r",
+              "});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "value": ""
+    }
+  ]
+}

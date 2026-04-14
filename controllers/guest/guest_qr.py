@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse
 from pathlib import Path
 import os
 
-router = APIRouter()
+router = APIRouter(prefix="")
 
 HTML_PATH = Path(__file__).parent / "guest_qr.html"
 
