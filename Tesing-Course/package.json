@@ -1,0 +1,11 @@
+{
+  "name": "fastapi-e2e-tests",
+  "version": "1.0.0",
+  "private": true,
+  "devDependencies": {
+    "newman": "^5.0.0"
+  },
+  "scripts": {
+    "test:api": "newman run postman/collection.json -e postman/environment.json"
+  }
+}
