@@ -1,0 +1,353 @@
+{
+  "info": {
+    "_postman_id": "81c7d30d-7039-44df-9979-f0bd962a399e",
+    "name": "Quản lý Nhà hàng & Bàn",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "53043604",
+    "_collection_link": "https://go.postman.co/collection/53043604-81c7d30d-7039-44df-9979-f0bd962a399e?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Restaurant",
+      "item": [
+        {
+          "name": "restaurants",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// [N1] Kiểm tra tạo nhà hàng thành công (Status 201)\r",
+                  "pm.test(\"N1 - Status code is 201\", function () {\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "});\r",
+                  "\r",
+                  "// [N2] Kiểm tra phản hồi trả về đúng định dạng JSON và có ID\r",
+                  "let data = pm.response.json();\r",
+                  "pm.test(\"N2 - Response is JSON and Restaurant created with ID\", function () {\r",
+                  "    pm.response.to.be.json;\r",
+                  "    pm.expect(data).to.have.property(\"id\");\r",
+                  "    \r",
+                  "    // Lưu ID vào môi trường để sử dụng cho các API sau\r",
+                  "    pm.environment.set(\"restaurant_id\", data.id);\r",
+                  "});\r",
+                  "\r",
+                  "// [B1] Kiểm tra định dạng dữ liệu trả về (Kiểu dữ liệu ID)\r",
+                  "// Đây là Case Boundary để xác nhận ID trả về đúng định dạng chuỗi (UUID)\r",
+                  "pm.test(\"B1 - Data types of ID is correct\", function () {\r",
+                  "    pm.expect(data.id).to.be.a('string'); \r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"id\": \"fb4a9eab-1803-4f1c-ae9f-4583892867de\",\r\n    \"name\": \"Pizza Hut\",\r\n    \"description\": \"Famous pizza restaurant\",\r\n    \"image_preview\": null\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/restaurants",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "restaurants"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "restaurants",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// [N1] Kiểm tra kết nối thành công (Lấy danh sách nhà hàng)\r",
+                  "pm.test(\"N1 - Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "// [N2] Kiểm tra phản hồi trả về đúng định dạng JSON\r",
+                  "pm.test(\"N2 - Response is JSON format\", function () {\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "\r",
+                  "// [N3] Kiểm tra dữ liệu trả về phải là một danh sách (Array)\r",
+                  "// Đảm bảo hệ thống trả về mảng dữ liệu ngay cả khi trống\r",
+                  "let data = pm.response.json();\r",
+                  "pm.test(\"N3 - Response data is an array\", function () {\r",
+                  "    pm.expect(data).to.be.an(\"array\");\r",
+                  "    pm.expect(data).to.not.be.null;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/restaurants",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "restaurants"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update restaurant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// [N1] Kiểm tra cập nhật ảnh thành công\r",
+                  "pm.test(\"N1 - Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "// [N2] Kiểm tra phản hồi trả về đúng định dạng JSON\r",
+                  "pm.test(\"N2 - Response is JSON format\", function () {\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "\r",
+                  "// [B1] Kiểm tra xem phản hồi có chứa đường dẫn ảnh (URL/Path) không\r",
+                  "// Đây là Case Boundary (Biên) để xác nhận dữ liệu trả về có nội dung\r",
+                  "let jsonData = pm.response.json();\r",
+                  "pm.test(\"B1 - Response contains image URL or status\", function () {\r",
+                  "    // Check xem có trường url hoặc image hoặc message không\r",
+                  "    pm.expect(jsonData).to.be.an('object');\r",
+                  "    pm.expect(Object.keys(jsonData).length).to.be.at.least(1);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"Pizza Hut Updated\",\r\n  \"description\": \"newwww description\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/restaurants/{{restaurant_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "restaurants",
+                "{{restaurant_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "up-preview-image",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// [N1] Kiểm tra cập nhật ảnh thành công (Status 200)\r",
+                  "pm.test(\"N1 - Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "// [N2] Kiểm tra phản hồi trả về đúng định dạng JSON\r",
+                  "pm.test(\"N2 - Response is JSON format\", function () {\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "\r",
+                  "// [B1] Kiểm tra phản hồi có chứa dữ liệu ảnh (URL/Path)\r",
+                  "// Đây là Case Boundary để xác nhận dữ liệu trả về không bị rỗng\r",
+                  "let data = pm.response.json();\r",
+                  "pm.test(\"B1 - Response contains image information\", function () {\r",
+                  "    pm.expect(data).to.be.an('object');\r",
+                  "    // Kiểm tra xem có trường liên quan đến ảnh (ví dụ: url, path hoặc data)\r",
+                  "    pm.expect(Object.keys(data).length).to.be.at.least(1);\r",
+                  "});\r",
+                  "\r",
+                  "// Log kiểm tra biến môi trường\r",
+                  "console.log(\"restaurant_id =\", pm.environment.get(\"restaurant_id\"));"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "uuid": "4cf33ca4-ddb4-4e4d-93f6-306da9d97645",
+                  "src": "/C:/Users/TuanHuy/Downloads/pizza.jpg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/restaurants/{{restaurant_id}}/preview-image",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "restaurants",
+                "{{restaurant_id}}",
+                "preview-image"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete restaurant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// [N1] Kiểm tra xóa nhà hàng thành công (Status 200 hoặc 204)\r",
+                  "pm.test(\"N1 - Status code is 200 or 204\", function () {\r",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
+                  "});\r",
+                  "\r",
+                  "// [N2] Kiểm tra phản hồi trả về đúng định dạng JSON\r",
+                  "pm.test(\"N2 - Response is JSON format\", function () {\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "\r",
+                  "// [A1] Kiểm tra phản hồi xác nhận việc xóa (Abnormal/Verify)\r",
+                  "// Đảm bảo Body trả về có chứa thông báo thành công hoặc không rỗng\r",
+                  "let jsonData = pm.response.json();\r",
+                  "pm.test(\"A1 - Delete operation is confirmed in response\", function () {\r",
+                  "    pm.expect(jsonData).to.be.an('object');\r",
+                  "    // Kiểm tra xem có message báo xóa thành công không\r",
+                  "    pm.expect(jsonData).to.have.any.keys('message', 'status', 'id');\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/restaurants/{{restaurant_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "restaurants",
+                "{{restaurant_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "restaurant_id",
+      "value": ""
+    }
+  ]
+}
